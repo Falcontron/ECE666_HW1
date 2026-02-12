@@ -1,0 +1,25 @@
+2.7 Gaussian elimination is a well-known technique for solving simultaneous linear
+systems of equations. Variables are eliminated one by one until there is only one
+left, and then the discovered values of variables are back-substituted to obtain the
+values of other variables. In practice, the coefficients of the unknowns in the equation system are represented as a matrix A, and the matrix is first converted to an
+upper-triangular matrix (a matrix in which all elements below the main diagonal
+are 0). Then back-substitution is used. Let us focus on the conversion to an uppertriangular matrix by successive variable elimination. Pseudocode For sequential
+Gaussian elimination isshown in Figure 2.18. The diagonal element for a particular
+iteration of the k loop is called the pivot element, and its row is called the pivot row.
+
+a. Draw a simple figure illustrating the dependences among matrix elements.
+
+b. Assuming a decomposition into rows and an assignment into blocks of contiguous rows, 
+write a shared address space parallel version using the primitives used for the equation solver in this chapter,
+
+c. Write a message-passing version for the same decomposition and assignment,
+first using synchronous message passing and then any form of asynchronous
+message passing.
+
+d Can you see obvious performance problems with this partitioning? (We will
+discuss this further in the next chapter.)
+
+e. Modify both the shared addressspace and message-passing versions to use an
+interleaved assignment of rows to processes.
+
+f. Discuss the trade-offs (programming difficulty and any likely major perfor- mance differences) in programming the shared address space and messagepassing versions.

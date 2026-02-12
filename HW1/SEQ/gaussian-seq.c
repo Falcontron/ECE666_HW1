@@ -1,0 +1,74 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+//#define DEBUG
+
+#ifdef DEBUG
+#define N 3
+#endif
+
+#ifndef DEBUG
+#define N 3
+#endif
+
+void eliminate (double **A) {                                // *triangularizc the NxN matrix A*/
+    for (int k = 0; k < N; ++k) {                       // Hoop over all diagonal ( pivot ) dements*/
+        for (int j = k+1; j < N; ++j){                  // for all elements in row of, and to the right of the pivot element*/
+            A[k][j] = A[k][j] / A[k][k];               // divide  by pivot element*/
+        }
+        A[k][k] = 1.0;
+
+        for (int i = k+1; i < N; ++i){                      // for all rows below the pivot row*/
+            for (int j = k+1; j < N; ++j) {                 //for all elements in the row
+                A[i][j] = A[i][j] - A[i][k] * A[k][j];
+            }
+            A[i][k] = 0.0;
+        }
+    } 
+}
+
+void print_matrix(double **A) {
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            printf("%10.2f ", A[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+
+int main()
+{
+    // allocate NxN matrix
+    double **A = malloc(N * sizeof(double *));
+    for (int i = 0; i < N; i++)
+        A[i] = malloc(N * sizeof(double));
+
+    // example matrix
+    double data[N][N] = {
+        {2, 1, -1},
+        {-3, -1, 2},
+        {-2, 1, 2}
+    };
+
+    for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++)
+            A[i][j] = data[i][j];
+
+    printf("Original Matrix:\n");
+    print_matrix(A);
+
+    eliminate(A);
+
+    printf("After Elimination:\n");
+    print_matrix(A);
+
+    // free memory
+    for (int i = 0; i < N; i++)
+        free(A[i]);
+    free(A);
+
+    return 0;
+}
+
