@@ -6,5 +6,8 @@ debug:
 seq: gaussian-seq.c 
 	gcc gaussian-seq.c -o gaussian-seq 
 
+time: gaussian-seq.c 
+	time ./gaussian-seq
+
 clean:
 	rm gaussian-seq

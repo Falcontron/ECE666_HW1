@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
+#include <mpi.h>
 
 //#define DEBUG
 
 #ifdef DEBUG
-#define N 3
+#define N 32
 #endif
 
 #ifndef DEBUG
@@ -13,76 +13,40 @@
 #endif
 
 int BLOCK_SIZE;
-int NUM_THREADS;
-double A[N][N] = {0};
+int NUM_PROCS;
 
-typedef struct {
-    int start, end, k;
-} targ;
+void eliminate (double **A, int myid) {   
+    double temp_row[N] = {0};
 
-
-
-void * worker_function(void *args) {
-    targ *arg = (targ *)args;
-
-    for (int i = arg->start; i <= arg->end; ++i){
-        for (int j = arg->k + 1; j < N; ++j){
-            A[i][j] -= A[i][arg->k] * A[arg->k][j];
+    for (int k = 0; k < N; ++k){              
+        int cur_id = k / BLOCK_SIZE;
+        if (cur_id >= NUM_PROCS) {
+            cur_id = NUM_PROCS - 1;
         }
-        A[i][arg->k] = 0.0;
+
+        if (myid == cur_id){
+            for (int j = k+1; j < N; ++j){    
+                A[k][j] /= A[k][k];
+                temp_row[j] = A[k][j];
+            }
+            A[k][k] = 1.0;
+            temp_row[k] = 1.0;
+        }
+
+        MPI_Bcast(temp_row, N, MPI_DOUBLE, cur_id, MPI_COMM_WORLD);
+
+        for (int i = myid * BLOCK_SIZE; (i < myid * BLOCK_SIZE + BLOCK_SIZE) && (i < N); ++i){
+            if (i > k){
+                for (int j = k + 1; j < N; ++j){
+                    A[i][j] -= A[i][k] * temp_row[j];
+                }
+                A[i][k] = 0.0;
+            }
+        }
     }
-    return NULL;
 }
 
-void eliminate () {                                // *triangularizc the NxN matrix A*/
-    int tid[N];
-    
-
-    tid[0] = 0;
-    for (int k = 0; k < N; ++k){                       // Hoop over all diagonal ( pivot ) dements*/
-        for (int j = k+1; j < N; ++j){                  // for all elements in row of, and to the right of the pivot element*/
-            A[k][j] /= A[k][k];               // divide  by pivot element*/
-        }
-        A[k][k] = 1.0;
-
-        BLOCK_SIZE = (N - k + 1 + NUM_THREADS - 1) / NUM_THREADS;
-        int num_threads = ((N - k + 1) + BLOCK_SIZE - 1) / BLOCK_SIZE;
-        if (num_threads > NUM_THREADS) {
-            num_threads = NUM_THREADS;
-        }
-        pthread_t worker_threads[num_threads];
-        targ args[num_threads];
-
-        for (int i = 0; i < num_threads; ++i){                      // for all rows below the pivot row*/
-            args[i].start = i * BLOCK_SIZE + k + 1;
-
-            if (args[i].start >= N){
-                break;
-            }
-            if (args[i].start + BLOCK_SIZE - 1 < N){
-                args[i].end = args[i].start + BLOCK_SIZE - 1;
-            }
-            else {
-                args[i].end = N - 1;
-            }
-            
-            args[i].k = k;
-
-            if(pthread_create(&worker_threads[i], NULL, worker_function, &args[i])) {
-                fprintf(stderr, "Error creating thread %d\n",i);
-            }
-        }
-
-        for (int i = 0; i < num_threads; ++i){
-            if (args[i].start >= N){
-                break;
-            }
-            pthread_join(worker_threads[i], NULL);
-        }
-    } 
-}
-
-void print_matrix() {
+void print_matrix(double **A) {
     for (int i = 0; i < N; ++i) {
         for (int j = 0; j < N; ++j) {
             printf("%5.5f ", A[i][j]);
@@ -94,6 +58,11 @@ void print_matrix() {
 
 int main(int argc, char* argv[])
 {
+    double **A = malloc(N * sizeof(double *));
+    for (int i = 0; i < N; i++){
+        A[i] = malloc(N * sizeof(double));
+    }
+
     // double data[N][N] = {
     //     {2, 1, -1},
     //     {-3, -1, 2},
@@ -141,21 +110,33 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (argc >= 2) {
-        NUM_THREADS = atoi(argv[1]);
-    } else {
-        NUM_THREADS = 16;
+    int myid;
+    int cur_id = 0;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    MPI_Comm_size(MPI_COMM_WORLD, &NUM_PROCS);
+
+    BLOCK_SIZE = (N + NUM_PROCS - 1) / NUM_PROCS;
+
+    if (myid == 0){
+        printf("Original Matrix:\n");
+        print_matrix(A);
     }
 
-    BLOCK_SIZE = (N + NUM_THREADS - 1) / NUM_THREADS;
+    eliminate(A, myid);
 
-    printf("Original Matrix:\n");
-    print_matrix();
+    for (int i = 0; i < N; ++i){
+        MPI_Bcast(A[i], N, MPI_DOUBLE, (i / BLOCK_SIZE) % NUM_PROCS, MPI_COMM_WORLD);
+    }
 
-    eliminate();
+    
+    if (myid == 0){
+        printf("After Elimination:\n");
+        print_matrix(A);
+    }
 
-    printf("After Elimination:\n");
-    print_matrix();
+    MPI_Finalize();
 
     return 0;
 }

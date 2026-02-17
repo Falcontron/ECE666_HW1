@@ -19,7 +19,63 @@ message passing.
 d Can you see obvious performance problems with this partitioning? (We will
 discuss this further in the next chapter.)
 
+Theres a sequential dependence where every following row depends on the pivot row to be calculated first, and lower rows
+have more work to do
+
 e. Modify both the shared addressspace and message-passing versions to use an
 interleaved assignment of rows to processes.
 
 f. Discuss the trade-offs (programming difficulty and any likely major perfor- mance differences) in programming the shared address space and messagepassing versions.
+ 
+As for programming, seq is easiest, then shared memory, then message passing. Overall I feel like no matter what message passing will have the longest performance overhead as each
+process basically does useless work until it is its turn to calculate the pivot row. 
+
+Actually as I'm writing this I guess it would be more efficient for both methods to update the matrix vertically as each pivot element is calculated but the requirement 
+was for working code not fast code so I guess its okay :) 
+
+MP
+real    0m2.134s
+user    0m0.559s
+sys     0m3.947s
+
+real    0m1.046s
+user    0m0.163s
+sys     0m1.266s
+
+real    0m0.641s
+user    0m0.067s
+sys     0m0.456s
+
+real    0m0.341s
+user    0m0.032s
+sys     0m0.138s
+
+real    0m0.274s
+user    0m0.020s
+sys     0m0.064s
+
+SM
+real    0m0.027s
+user    0m0.003s
+sys     0m0.029s
+
+real    0m0.016s
+user    0m0.003s
+sys     0m0.017s
+
+real    0m0.009s
+user    0m0.001s
+sys     0m0.009s
+
+real    0m0.008s
+user    0m0.001s
+sys     0m0.008s
+
+real    0m0.006s
+user    0m0.001s
+sys     0m0.005s
+
+SEQ
+real    0m0.005s
+user    0m0.001s
+sys     0m0.004s
