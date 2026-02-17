@@ -5,6 +5,10 @@ debug:
 
 blocked: gaussian-blocked.c 
 	gcc gaussian-blocked.c -o gaussian-blocked -lpthread
+	gcc gaussian-interleaved.c -o gaussian-interleaved -lpthread
+
+interleaved: 
+	./gaussian-interleaved 16
 
 run: gaussian-blocked 
 	./gaussian-blocked 16

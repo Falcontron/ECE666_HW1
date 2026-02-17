@@ -1,10 +1,18 @@
-all: blocked
+all: blocked 
 
 debug: 
 	gcc -O2 gaussian-blocked.c -o gaussian-blocked -D DEBUG -lpthread
 
 blocked: gaussian-blocked.c Makefile
 	mpicc -O2 gaussian-blocked.c -o gaussian-blocked
+	mpicc -O2 gaussian-asynch.c -o gaussian-asynch
+	mpicc -O2 gaussian-interleaved.c -o gaussian-interleaved
+
+asynch: 
+	mpiexec -n 16 -f machinefile gaussian-asynch
+
+interleaved:
+	mpiexec -n 16 -f machinefile gaussian-interleaved
 
 run:
 	mpiexec -n 16 -f machinefile gaussian-blocked
